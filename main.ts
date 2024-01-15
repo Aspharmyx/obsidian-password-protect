@@ -1,134 +1,159 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Notice, Plugin, PluginSettingTab, TFolder } from "obsidian"
+import { ProtectedPathsModal } from './modal/ProtectedPathsModal';
+import { SetPasswordModal } from "./modal/SetPasswordModal";
+import { changePathVisibility } from "utils";
+import { ManageHiddenPaths } from "settings/ManageHiddenPaths";
+import { ChangePasswordSetting } from "settings/ChangePasswordSetting";
+import { ShowHiddenFilesSetting } from "settings/ShowHiddenFilesSetting";
 
-// Remember to rename these classes and interfaces!
-
-interface MyPluginSettings {
-	mySetting: string;
+interface PasswordPluginSettings {
+	hidden: boolean;
+	hiddenList: string[];
+	password: string;
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
-}
-
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
-
+export default class PasswordPlugin extends Plugin {
+	settings: PasswordPluginSettings = {
+		hidden: true,
+		hiddenList: [],
+		password: "",
+	}
 	async onload() {
 		await this.loadSettings();
+		console.log("Password Protect Plugin Launched!");
 
-		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
-		// Perform additional things with the ribbon
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
-
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
-
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
+		this.registerEvent(
+			this.app.workspace.on(`file-menu`, (menu, file) => {
+				if (file instanceof TFolder) {
+					menu.addItem((i) => {
+						if (this.settings.hiddenList.includes(file.path)) {
+							i.setTitle(`Unhide Folder`)
+							.setIcon(`eye`)
+							.onClick(() => {
+								this.unhidePath(file.path);
+							})
+						} else {
+							i.setTitle(`Hide Folder`)
+							.setIcon(`eye-off`)
+							.onClick(() => {
+								changePathVisibility(file.path, this.settings.hidden);
+								this.settings.hiddenList.push(file.path);
+								this.saveSettings();
+							})
+						}
+					})
+				} else {
+					menu.addItem((i) => {
+						if (this.settings.hiddenList.includes(file.path)) {
+							i.setTitle(`Unhide File`)
+							.setIcon(`eye`)
+							.onClick((e) => {
+								this.unhidePath(file.path);
+							})
+						} else {
+							i.setTitle(`Hide File`)
+							.setIcon(`eye-off`)
+							.onClick((e) => {
+								changePathVisibility(file.path, this.settings.hidden);
+								this.settings.hiddenList.push(file.path);
+								this.saveSettings();
+							})
+						}
+					})
 				}
+			})
+		)
+
+		// this.addRibbonIcon("settings", "Change Password", () => {
+		// 	new ChangePasswordModal(this, (pass) => {
+		// 		this.settings.password = pass;
+		// 		this.saveSettings();
+		// 		new Notice("Changed Password!");
+		// 	}).open();
+		// })
+
+		this.addRibbonIcon("eye", "Show/Hide Files", () => {
+			if (this.settings.hidden) {
+				if (!this.settings.password) {
+					new SetPasswordModal(this.app, (pass) => {
+						this.settings.password = pass;
+						this.saveSettings();
+						for (const path of this.settings.hiddenList) {
+							changePathVisibility(path, false);
+							this.settings.hidden = false;
+						}
+					}).open();
+					new Notice("Please Set A Password!");
+				}
+				else {
+					new ProtectedPathsModal(this.app, (result) => {
+						if (result == this.settings.password) {
+							for (const path of this.settings.hiddenList) {
+								changePathVisibility(path, false);
+								this.settings.hidden = false;
+							}
+							new Notice("Password Correct!");
+						} else {
+							new Notice(`Wrong Password! Password:${this.settings.password}`);
+						}
+					}).open();
+				}
+		}
+		else {
+			this.settings.hidden = !this.settings.hidden;
+			for (const path of this.settings.hiddenList) {
+				changePathVisibility(path, this.settings.hidden);
 			}
+		}
 		});
 
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
-	}
-
-	onunload() {
-
+		this.app.workspace.onLayoutReady(() => 
+		{
+			// Timeout is used to delay until the file explorer is loaded. Delay of 0 works, but I set it to 200 just to be safe.
+			setTimeout(() => {
+			for (const path of this.settings.hiddenList) {
+				changePathVisibility(path, this.settings.hidden);
+			}
+			//If a hidden file is open close it.
+			if (this.settings.hiddenList.includes(this.app.workspace.getActiveFile()?.name ?? ""))
+				this.app.workspace.getLeaf().detach();
+			}, 100);
+			
+		})
+		this.addSettingTab(new PasswordPluginSettingsTab(this.app, this));
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.settings = Object.assign({}, this.settings, await this.loadData());
 	}
-
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
-}
-
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
+	unhidePath(path: string) {
+		const i = this.settings.hiddenList.indexOf(path);
+		this.settings.hiddenList.splice(i, 1);
+		changePathVisibility(path, false);
+		this.saveSettings();
 	}
-
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
+	onunload(): void {
+		
 	}
 }
 
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+class PasswordPluginSettingsTab extends PluginSettingTab {
+	plugin: PasswordPlugin;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: PasswordPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
 
 	display(): void {
-		const {containerEl} = this;
+		const { containerEl: container } = this;
 
-		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
-			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
-				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
-					await this.plugin.saveSettings();
-				}));
+		container.empty();
+		ShowHiddenFilesSetting.create(this.plugin, container);
+		ChangePasswordSetting.create(this.plugin, container);
+		ManageHiddenPaths.create(this.plugin, container);
 	}
 }
