@@ -1,4 +1,4 @@
-import { App, Notice, Plugin, PluginSettingTab, TFolder } from "obsidian"
+import { App, Notice, Plugin, PluginSettingTab, TFolder, setIcon } from "obsidian"
 import { ProtectedPathsModal } from './modal/ProtectedPathsModal';
 import { SetPasswordModal } from "./modal/SetPasswordModal";
 import { changePathVisibility } from "utils";
@@ -18,6 +18,8 @@ export default class PasswordPlugin extends Plugin {
 		hiddenList: [],
 		password: "",
 	}
+	ribbonButton: HTMLElement;
+
 	async onload() {
 		await this.loadSettings();
 		// console.log("Password Protect Plugin Launched!");
@@ -74,54 +76,45 @@ export default class PasswordPlugin extends Plugin {
 		// })
 
 		//Ribbon Button
-		this.addRibbonIcon("eye", "Show/Hide Files", () => {
+		this.ribbonButton = this.addRibbonIcon(this.settings.hidden ? "eye-off" : "eye", this.settings.hidden ? "Show Hidden Files" : "Hide Files", () => {
+
+			if (this.settings.hiddenList.length == 0) {
+				new Notice("There Are No Hidden Files.")
+				return;
+			}
+
 			if (this.settings.hidden) {
+				//If password not set show set password modal
 				if (!this.settings.password) {
+					new Notice("Please Set A Password!");
 					new SetPasswordModal(this.app, (pass) => {
 						this.settings.password = pass;
 						this.saveSettings();
-						for (const path of this.settings.hiddenList) {
-							changePathVisibility(path, false);
-							this.settings.hidden = false;
-						}
 					}).open();
-					new Notice("Please Set A Password!");
 				}
 				else {
 					new ProtectedPathsModal(this.app, (result) => {
 						if (result == this.settings.password) {
-							for (const path of this.settings.hiddenList) {
-								changePathVisibility(path, false);
-								this.settings.hidden = false;
-							}
+							this.changeFileVisibility(false);
 							new Notice("Password Correct!");
 						} else {
-							new Notice(`Wrong Password! Password:${this.settings.password}`);
+							new Notice("Wrong Password!");
 						}
 					}).open();
 				}
-		}
-		else {
-			this.settings.hidden = !this.settings.hidden;
-			for (const path of this.settings.hiddenList) {
-				changePathVisibility(path, this.settings.hidden);
 			}
-		}
+			else {
+				this.changeFileVisibility(true);
+			}
 		});
 
 		//When application opened
 		this.app.workspace.onLayoutReady(() => 
 		{
-			//Making sure the files are hidden when the app is launched
-			this.settings.hidden = true;
 			// Timeout is used to delay until the file explorer is loaded. Delay of 0 works, but I set it to 200 just to be safe.
 			setTimeout(() => {
-			for (const path of this.settings.hiddenList) {
-				changePathVisibility(path, this.settings.hidden);
-			}
-			//If a hidden file is open close it.
-			if (this.settings.hiddenList.includes(this.app.workspace.getActiveFile()?.name ?? ""))
-				this.app.workspace.getLeaf().detach();
+			//Making sure the files are hidden when the app is launched
+			this.changeFileVisibility(true);
 			}, 100);
 			
 		})
@@ -135,6 +128,20 @@ export default class PasswordPlugin extends Plugin {
 	}
 	async saveSettings() {
 		await this.saveData(this.settings);
+	}
+	changeFileVisibility(hide: boolean) {
+		for (const path of this.settings.hiddenList) {
+			changePathVisibility(path, hide);
+		}
+		this.settings.hidden = hide;
+
+		//If a hidden file is open close it.
+		if (this.settings.hiddenList.includes(this.app.workspace.getActiveFile()?.path ?? ""))
+		this.app.workspace.getLeaf().detach();
+
+		//Update rRibbon button icon and text
+		this.ribbonButton.ariaLabel = hide ? "Show Hidden Files" : "Hide Files";
+		setIcon(this.ribbonButton, hide ? "eye-off" : "eye");
 	}
 	unhidePath(path: string) {
 		const i = this.settings.hiddenList.indexOf(path);
