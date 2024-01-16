@@ -20,8 +20,9 @@ export default class PasswordPlugin extends Plugin {
 	}
 	async onload() {
 		await this.loadSettings();
-		console.log("Password Protect Plugin Launched!");
+		// console.log("Password Protect Plugin Launched!");
 
+		//Right Click Menu
 		this.registerEvent(
 			this.app.workspace.on(`file-menu`, (menu, file) => {
 				if (file instanceof TFolder) {
@@ -72,6 +73,7 @@ export default class PasswordPlugin extends Plugin {
 		// 	}).open();
 		// })
 
+		//Ribbon Button
 		this.addRibbonIcon("eye", "Show/Hide Files", () => {
 			if (this.settings.hidden) {
 				if (!this.settings.password) {
@@ -107,8 +109,11 @@ export default class PasswordPlugin extends Plugin {
 		}
 		});
 
+		//When application opened
 		this.app.workspace.onLayoutReady(() => 
 		{
+			//Making sure the files are hidden when the app is launched
+			this.settings.hidden = true;
 			// Timeout is used to delay until the file explorer is loaded. Delay of 0 works, but I set it to 200 just to be safe.
 			setTimeout(() => {
 			for (const path of this.settings.hiddenList) {
@@ -120,6 +125,8 @@ export default class PasswordPlugin extends Plugin {
 			}, 100);
 			
 		})
+
+		//Settings
 		this.addSettingTab(new PasswordPluginSettingsTab(this.app, this));
 	}
 
@@ -135,11 +142,9 @@ export default class PasswordPlugin extends Plugin {
 		changePathVisibility(path, false);
 		this.saveSettings();
 	}
-	onunload(): void {
-		
-	}
 }
 
+//Settings
 class PasswordPluginSettingsTab extends PluginSettingTab {
 	plugin: PasswordPlugin;
 
