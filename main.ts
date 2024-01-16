@@ -115,7 +115,7 @@ export default class PasswordPlugin extends Plugin {
 			setTimeout(() => {
 			//Making sure the files are hidden when the app is launched
 			this.changeFileVisibility(true);
-			}, 100);
+			}, 200);
 			
 		})
 
