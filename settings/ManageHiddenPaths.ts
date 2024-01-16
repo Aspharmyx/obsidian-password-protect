@@ -21,7 +21,7 @@ export class ManageHiddenPaths {
                         new HiddenPathsModal(plugin).open();
                     }
                     else {
-                        new Notice("Wrong Password");
+                        new Notice("Wrong Password!");
                     }
                 }).open();
 			})

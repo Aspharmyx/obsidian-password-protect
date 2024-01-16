@@ -14,15 +14,12 @@ export class ShowHiddenFilesSetting {
             btn.setButtonText("Show/Hide Files")
             .onClick(event => {
                 if (!event.isTrusted) { return }
+
                 if (plugin.settings.hidden) {
                     if (!plugin.settings.password) {
                         new SetPasswordModal(plugin.app, (pass) => {
                             plugin.settings.password = pass;
                             plugin.saveSettings();
-                            for (const path of plugin.settings.hiddenList) {
-                                changePathVisibility(path, false);
-                                plugin.settings.hidden = false;
-                            }
                         }).open();
                         new Notice("Please Set A Password!");
                     }
@@ -35,7 +32,7 @@ export class ShowHiddenFilesSetting {
                                 }
                                 new Notice("Password Correct!");
                             } else {
-                                new Notice(`Wrong Password! Password:${plugin.settings.password}`);
+                                new Notice("Wrong Password!");
                             }
                         }).open();
                     }
