@@ -1,4 +1,4 @@
-import { App, Notice, Plugin, PluginSettingTab, TFolder, setIcon } from "obsidian"
+import { App, Notice, Plugin, PluginSettingTab, TFolder, setIcon } from 'obsidian';
 import { ProtectedPathsModal } from './modal/ProtectedPathsModal';
 import { SetPasswordModal } from "./modal/SetPasswordModal";
 import { changePathVisibility } from "utils";
@@ -111,13 +111,27 @@ export default class PasswordPlugin extends Plugin {
 		//When application opened
 		this.app.workspace.onLayoutReady(() => 
 		{
-			// Timeout is used to delay until the file explorer is loaded. Delay of 0 works, but I set it to 200 just to be safe.
 			setTimeout(() => {
-			//Making sure the files are hidden when the app is launched
-			this.changeFileVisibility(true);
-			}, 200);
+				const leaf = this.app.workspace.getLeavesOfType("file-explorer")[0];
+				const observer = new MutationObserver(() => {
+					console.log("File View Changed!");
+					this.changeFileVisibility(true);
+					observer.disconnect();
+				});
+				observer.observe(leaf.view.containerEl, {attributes: true, subtree: true, characterData: true})
+				console.log(leaf.view.containerEl)		
+			}, 2)
+
+			// // Timeout is used to delay until the file explorer is loaded. Delay of 0 works, but I set it to 200 just to be safe.
+			// setTimeout(() => {
+			// //Making sure the files are hidden when the app is launched
+			// this.changeFileVisibility(true);
+	
+			// }, 200);
+
 			
 		})
+
 
 		//Settings
 		this.addSettingTab(new PasswordPluginSettingsTab(this.app, this));
@@ -143,7 +157,7 @@ export default class PasswordPlugin extends Plugin {
 				this.app.workspace.getLeaf().detach();
 		}
 
-		//Update rRibbon button icon and text
+		//Update ribbon button icon and text
 		if (hide) {
 			this.ribbonButton.ariaLabel = "Show Hidden Files";
 			setIcon(this.ribbonButton, "eye-off");
