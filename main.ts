@@ -137,12 +137,21 @@ export default class PasswordPlugin extends Plugin {
 		this.settings.hidden = hide;
 
 		//If a hidden file is open close it.
-		if (this.settings.hiddenList.includes(this.app.workspace.getActiveFile()?.path ?? ""))
-		this.app.workspace.getLeaf().detach();
+		const activeFile = this.app.workspace.getActiveFile();
+		if (activeFile) {
+			if (this.settings.hiddenList.includes(activeFile.path))
+				this.app.workspace.getLeaf().detach();
+		}
 
 		//Update rRibbon button icon and text
-		this.ribbonButton.ariaLabel = hide ? "Show Hidden Files" : "Hide Files";
-		setIcon(this.ribbonButton, hide ? "eye-off" : "eye");
+		if (hide) {
+			this.ribbonButton.ariaLabel = "Show Hidden Files";
+			setIcon(this.ribbonButton, "eye-off");
+		}
+		else {
+			this.ribbonButton.ariaLabel = "Hide Files";
+			setIcon(this.ribbonButton, "eye");
+		}
 	}
 	unhidePath(path: string) {
 		const i = this.settings.hiddenList.indexOf(path);
