@@ -67,14 +67,6 @@ export default class PasswordPlugin extends Plugin {
 			})
 		)
 
-		// this.addRibbonIcon("settings", "Change Password", () => {
-		// 	new ChangePasswordModal(this, (pass) => {
-		// 		this.settings.password = pass;
-		// 		this.saveSettings();
-		// 		new Notice("Changed Password!");
-		// 	}).open();
-		// })
-
 		//Ribbon Button
 		this.ribbonButton = this.addRibbonIcon(this.settings.hidden ? "eye-off" : "eye", this.settings.hidden ? "Show Hidden Files" : "Hide Files", () => {
 
@@ -111,25 +103,17 @@ export default class PasswordPlugin extends Plugin {
 		//When application opened
 		this.app.workspace.onLayoutReady(() => 
 		{
+			//Sets an event for when the file explorer changes/renders and makes files hidden then destroys the event
 			setTimeout(() => {
 				const leaf = this.app.workspace.getLeavesOfType("file-explorer")[0];
 				const observer = new MutationObserver(() => {
-					console.log("File View Changed!");
 					this.changeFileVisibility(true);
 					observer.disconnect();
 				});
 				observer.observe(leaf.view.containerEl, {attributes: true, subtree: true, characterData: true})
-				console.log(leaf.view.containerEl)		
+
+				this.changeFileVisibility(true);
 			}, 2)
-
-			// // Timeout is used to delay until the file explorer is loaded. Delay of 0 works, but I set it to 200 just to be safe.
-			// setTimeout(() => {
-			// //Making sure the files are hidden when the app is launched
-			// this.changeFileVisibility(true);
-	
-			// }, 200);
-
-			
 		})
 
 
@@ -144,7 +128,6 @@ export default class PasswordPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 	changeFileVisibility(hide: boolean) {
-		console.log("Changing visibility");
 		for (const path of this.settings.hiddenList) {
 			changePathVisibility(path, hide);
 		}
@@ -154,7 +137,18 @@ export default class PasswordPlugin extends Plugin {
 		const activeFile = this.app.workspace.getActiveFile();
 		if (activeFile) {
 			if (this.settings.hiddenList.includes(activeFile.path))
-				this.app.workspace.getLeaf().detach();
+			for (const path of this.settings.hiddenList) {
+				const folder = this.app.vault.getAbstractFileByPath(path);
+				if (folder instanceof TFolder) {
+					for (const file of folder.children) {
+						if(this.settings.hiddenList.includes(file.path)){
+							this.app.workspace.getLeaf().detach();
+						}
+					}
+				}
+			
+			}
+			// this.app.workspace.getLeaf().detach();
 		}
 
 		//Update ribbon button icon and text
