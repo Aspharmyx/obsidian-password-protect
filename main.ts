@@ -135,20 +135,29 @@ export default class PasswordPlugin extends Plugin {
 
 		//If a hidden file is open close it.
 		const activeFile = this.app.workspace.getActiveFile();
+		//Is there an open file?
 		if (activeFile) {
-			if (this.settings.hiddenList.includes(activeFile.path))
-			for (const path of this.settings.hiddenList) {
-				const folder = this.app.vault.getAbstractFileByPath(path);
-				if (folder instanceof TFolder) {
-					for (const file of folder.children) {
-						if(this.settings.hiddenList.includes(file.path)){
-							this.app.workspace.getLeaf().detach();
+			//If there is an open file and its direktly in the hiddenList close it.
+			if (this.settings.hiddenList.includes(activeFile.path)) {
+				this.app.workspace.getLeaf().detach();
+			}
+			else {
+				//Iterate every folder in hiddenList
+				for (const path of this.settings.hiddenList) {
+					const folder = this.app.vault.getAbstractFileByPath(path);
+					if (folder instanceof TFolder) {
+						console.log(folder);
+						//Iterate every file in those folders
+						for (const file of folder.children) {
+							console.log(file);
+							//If the activeFile matches close it
+							if(activeFile == file){
+								this.app.workspace.getLeaf().detach();
+							}
 						}
 					}
 				}
-			
 			}
-			// this.app.workspace.getLeaf().detach();
 		}
 
 		//Update ribbon button icon and text
