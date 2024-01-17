@@ -22,7 +22,7 @@ export default class PasswordPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
-		// console.log("Password Protect Plugin Launched!");
+		console.log("Password Protect Plugin Launched!");
 
 		//Right Click Menu
 		this.registerEvent(
@@ -130,6 +130,7 @@ export default class PasswordPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 	changeFileVisibility(hide: boolean) {
+		console.log("Changing visibility");
 		for (const path of this.settings.hiddenList) {
 			changePathVisibility(path, hide);
 		}
