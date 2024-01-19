@@ -1,10 +1,11 @@
-import { App, Notice, Plugin, PluginSettingTab, TFolder, setIcon } from 'obsidian';
+import { App, Notice, Plugin, PluginSettingTab, TFile, TFolder, setIcon } from 'obsidian';
 import { ProtectedPathsModal } from './modal/ProtectedPathsModal';
 import { SetPasswordModal } from "./modal/SetPasswordModal";
-import { changePathVisibility } from "utils";
+// import { changePathVisibility } from "utils";
 import { ManageHiddenPaths } from "settings/ManageHiddenPaths";
 import { ChangePasswordSetting } from "settings/ChangePasswordSetting";
 import { ShowHiddenFilesSetting } from "settings/ShowHiddenFilesSetting";
+import { changePathVisibility } from 'utils';
 
 interface PasswordPluginSettings {
 	hidden: boolean;
@@ -33,15 +34,13 @@ export default class PasswordPlugin extends Plugin {
 							i.setTitle(`Unhide Folder`)
 							.setIcon(`eye`)
 							.onClick(() => {
-								this.unhidePath(file.path);
+								this.changeIndVisAndSave(file.path, false);
 							})
 						} else {
 							i.setTitle(`Hide Folder`)
 							.setIcon(`eye-off`)
 							.onClick(() => {
-								changePathVisibility(file.path, this.settings.hidden);
-								this.settings.hiddenList.push(file.path);
-								this.saveSettings();
+								this.changeIndVisAndSave(file.path, true);
 							})
 						}
 					})
@@ -51,15 +50,13 @@ export default class PasswordPlugin extends Plugin {
 							i.setTitle(`Unhide File`)
 							.setIcon(`eye`)
 							.onClick((e) => {
-								this.unhidePath(file.path);
+								this.changeIndVisAndSave(file.path, false);
 							})
 						} else {
 							i.setTitle(`Hide File`)
 							.setIcon(`eye-off`)
 							.onClick((e) => {
-								changePathVisibility(file.path, this.settings.hidden);
-								this.settings.hiddenList.push(file.path);
-								this.saveSettings();
+								this.changeIndVisAndSave(file.path, true);
 							})
 						}
 					})
@@ -100,6 +97,8 @@ export default class PasswordPlugin extends Plugin {
 			}
 		});
 
+		
+
 		//When application opened
 		this.app.workspace.onLayoutReady(() => 
 		{
@@ -128,12 +127,65 @@ export default class PasswordPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 	changeFileVisibility(hide: boolean) {
-		for (const path of this.settings.hiddenList) {
-			changePathVisibility(path, hide);
-		}
+		// for (const path of this.settings.hiddenList) {
+		// 	changePathVisibility(path, hide);
+		// }
 		this.settings.hidden = hide;
 
-		//If a hidden file is open close it.
+		if (hide) {
+			for (let i = 0; i < this.settings.hiddenList.length; i++) {
+				const file = this.settings.hiddenList[i];
+				if (file) {
+					const absFile = this.app.vault.getAbstractFileByPath(file);
+					if (absFile instanceof TFile) {
+						if (absFile.extension == "md") {
+							const newPath = file.slice(0,file.length - 3) + ".pp";
+							this.app.vault.rename(absFile, newPath);
+						}
+					}
+					else if (absFile instanceof TFolder) {
+						changePathVisibility(file, hide);
+						for (const childFile of absFile.children) {
+							this.changeIndVis(childFile.path, hide);
+						}
+					}
+				}
+			}
+		}
+		else {
+			for (const path of this.settings.hiddenList) {
+				//Get the file with .pp extension
+				const file = this.app.vault.getAbstractFileByPath(path);
+				const ppPath = path.slice(0, path.length - 3) + ".pp";
+				const ppFile = this.app.vault.getAbstractFileByPath(ppPath);
+				//If its a file replace the extension with .md
+				if (ppFile instanceof TFile) {
+					const newPath = ppFile.path.slice(0,ppFile.path.length - 3) + ".md";
+					this.app.vault.rename(ppFile, newPath);
+				} 
+				else if (file instanceof TFolder) {
+					changePathVisibility(path, false);
+					//For every note in the folder
+					for (const childFile of file.children) {
+						//Replace the extension with .md
+						this.changeIndVis(childFile.path, hide);
+					}
+				}
+			}
+			//This method checks for every file in vault can be used for a debug command
+			// for (const file of this.app.vault.getFiles()) {
+			// 	if (file.extension == "pp") {
+			// 		const absFile = this.app.vault.getAbstractFileByPath(file.path);
+			// 		//Null Check
+			// 		if (absFile instanceof TFile) {
+			// 			const newPath = file.path.slice(0,file.path.length - 3) + ".md";
+			// 			this.app.vault.rename(absFile, newPath);
+			// 		}
+			// 	}
+			// }
+		}
+
+		//If a hidden file is open close it. 
 		const activeFile = this.app.workspace.getActiveFile();
 		//Is there an open file?
 		if (activeFile) {
@@ -146,10 +198,8 @@ export default class PasswordPlugin extends Plugin {
 				for (const path of this.settings.hiddenList) {
 					const folder = this.app.vault.getAbstractFileByPath(path);
 					if (folder instanceof TFolder) {
-						console.log(folder);
 						//Iterate every file in those folders
 						for (const file of folder.children) {
-							console.log(file);
 							//If the activeFile matches close it
 							if(activeFile == file){
 								this.app.workspace.getLeaf().detach();
@@ -170,12 +220,103 @@ export default class PasswordPlugin extends Plugin {
 			setIcon(this.ribbonButton, "eye");
 		}
 	}
-	unhidePath(path: string) {
-		const i = this.settings.hiddenList.indexOf(path);
-		this.settings.hiddenList.splice(i, 1);
-		changePathVisibility(path, false);
-		this.saveSettings();
+	changeIndVis (path: string, hide: boolean) {
+		console.log(hide ? "Hiding: " : "Unhiding: " + path);
+		if (hide) {
+			const absFile = this.app.vault.getAbstractFileByPath(path);
+			if (absFile instanceof TFile) {
+				if (absFile.extension == "md") {
+					const newPath = path.slice(0, path.length - 3) + ".pp";
+					this.app.vault.rename(absFile, newPath);
+				}
+			}
+			else if (absFile instanceof TFolder) {
+				changePathVisibility(path, hide);
+				for (const childFile of absFile.children) {
+					if (childFile instanceof TFile) {
+						this.changeIndVis(childFile.path, hide);
+					}
+				}
+			}
+		}
+		else {
+			const absFile = this.app.vault.getAbstractFileByPath(path);
+			//If its a file
+			if (path.endsWith(".pp")) {
+				//Find the file with .pp extension
+				const ppPath = path.slice(0, path.length - 3) + ".pp";
+				const file = this.app.vault.getAbstractFileByPath(ppPath);
+				//Confirm its a file and its not null
+				if (file instanceof TFile) {
+					if (file.extension == "pp") {
+						//Replace the .pp extension with .md
+						const newPath = file.path.slice(0,file.path.length - 3) + ".md";
+						this.app.vault.rename(file, newPath);
+					}
+				}
+			} else if (absFile instanceof TFolder) {
+				changePathVisibility(path, hide);
+				for (const childFile of absFile.children) {
+					this.changeIndVis(childFile.path, hide);
+				}
+			}
+		}
 	}
+	changeIndVisAndSave (path: string, hide: boolean) {
+		if (hide) {
+			this.settings.hiddenList.push(path);
+		}
+		else {
+			const i = this.settings.hiddenList.indexOf(path);
+			this.settings.hiddenList.splice(i, 1);
+		}
+		this.saveSettings();
+
+		if (this.settings.hidden) {
+			const absFile = this.app.vault.getAbstractFileByPath(path);
+			if (absFile instanceof TFile) {
+				const newPath = path.slice(0, path.length - 3) + ".pp";
+				this.app.vault.rename(absFile, newPath);
+			}
+			else if (absFile instanceof TFolder) {
+				changePathVisibility(path, hide);
+				for (const childFile of absFile.children) {
+					if (childFile instanceof TFile) {
+						this.changeIndVis(childFile.path, hide);
+					}
+				}
+			}
+		}
+		else {
+			const absFile = this.app.vault.getAbstractFileByPath(path);
+			//If its a file
+			if (path.endsWith(".md")){
+				//Find the file with .pp extension
+				const ppPath = path.slice(0, path.length - 3) + ".pp";
+				const file = this.app.vault.getAbstractFileByPath(ppPath);
+				//Confirm its a file and its not null
+				if (file instanceof TFile) {
+					if (file.extension == "pp") {
+						//Replace the .pp extension with .md
+						const newPath = file.path.slice(0,file.path.length - 3) + ".md";
+						this.app.vault.rename(file, newPath);
+					}
+				}
+			} else if (absFile instanceof TFolder) {
+				changePathVisibility(path, hide);
+				for (const childFile of absFile.children) {
+					this.changeIndVis(childFile.path, hide);
+				}
+			}
+		}
+	}
+
+	// unhidePath(path: string) {
+	// 	const i = this.settings.hiddenList.indexOf(path);
+	// 	this.settings.hiddenList.splice(i, 1);
+	// 	changePathVisibility(path, false);
+	// 	this.saveSettings();
+	// }
 }
 
 //Settings

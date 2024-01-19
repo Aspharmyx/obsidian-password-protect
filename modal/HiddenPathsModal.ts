@@ -22,7 +22,7 @@ export class HiddenPathsModal extends Modal {
 				btn.setIcon(`cross`)
 				.setTooltip(`Remove`)
 				.onClick((e) => {
-					this.plugin.unhidePath(path);
+					this.plugin.changeIndVisAndSave(path, false);
 					c.hide();
 				})
 			})

@@ -1,7 +1,8 @@
-import { Notice, Setting } from "obsidian";
+import { Notice, Setting } from 'obsidian';
 import { HiddenPathsModal } from "modal/HiddenPathsModal";
 import PasswordPlugin from "main";
 import { ProtectedPathsModal } from "modal/ProtectedPathsModal";
+import { SetPasswordModal } from 'modal/SetPasswordModal';
 
 
 export class ManageHiddenPaths {
@@ -16,14 +17,23 @@ export class ManageHiddenPaths {
 				// sanity check to prevent other code from opening the modal
 				if (!event.isTrusted) { return }
 
-                new ProtectedPathsModal(plugin.app, (pass) => {
-                    if (pass == plugin.settings.password) {
-                        new HiddenPathsModal(plugin).open();
-                    }
-                    else {
-                        new Notice("Wrong Password!");
-                    }
-                }).open();
+				if (!plugin.settings.password) {
+					new Notice("Please Set A Password!");
+					new SetPasswordModal(plugin.app, (pass) => {
+						plugin.settings.password = pass;
+						plugin.saveSettings();
+					}).open();
+				}
+				else {
+					new ProtectedPathsModal(plugin.app, (pass) => {
+						if (pass == plugin.settings.password) {
+							new HiddenPathsModal(plugin).open();
+						}
+						else {
+							new Notice("Wrong Password!");
+						}
+					}).open();
+				}
 			})
 		})
 	}
