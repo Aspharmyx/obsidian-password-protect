@@ -19,11 +19,17 @@ export class SetPasswordModal extends Modal {
 
         new Setting(contentEl)
         .setName("Password")
-        .addText((text) => text.onChange((value) => {this.password = value}));
+        .addText((text) => {
+            text.inputEl.type = "password";
+            text.onChange((value) => {this.password = value});
+        });
         
         new Setting(contentEl)
         .setName("Confirm Password")
-        .addText((text) => text.onChange((value) => {this.confPassword = value}));
+        .addText((text) => {
+            text.inputEl.type = "password";
+            text.onChange((value) => {this.password = value});
+        });
 
         new Setting(contentEl)
         .addButton((btn) => 

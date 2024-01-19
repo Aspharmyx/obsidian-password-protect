@@ -17,7 +17,10 @@ export class ProtectedPathsModal extends Modal {
 
         new Setting(contentEl)
         .setName("Password")
-        .addText((text) => text.onChange((value) => {this.result = value}));
+        .addText((text) => {
+            text.inputEl.type = "password";
+            text.onChange((value) => {this.result = value});
+        });
 
         new Setting(contentEl)
         .addButton((btn) => 
