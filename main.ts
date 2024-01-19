@@ -19,11 +19,38 @@ export default class PasswordPlugin extends Plugin {
 		hiddenList: [],
 		password: "",
 	}
+	readonly EXT: string = "pp";
 	ribbonButton: HTMLElement;
 
 	async onload() {
 		await this.loadSettings();
 		console.log("Password Protect Plugin Launched!");
+
+		//Command for debugging
+		this.addCommand({
+			id: "all-hidden-files-to-md",
+			name: "Turn All Hidden Files To Markdown",
+			callback: () => {
+				new ProtectedPathsModal(this.app, (result) => {
+					if (result == this.settings.password) {
+						//This method checks for every file in vault
+						for (const file of this.app.vault.getFiles()) {
+							if (file.extension == this.EXT) {
+								const absFile = this.app.vault.getAbstractFileByPath(file.path);
+								//Null Check
+								if (absFile instanceof TFile) {
+									const newPath = file.path.slice(0, file.path.length - this.EXT.length - 1) + ".md";
+									this.app.vault.rename(absFile, newPath);
+								}
+							}
+						}
+						new Notice("Password Correct!");
+					} else {
+						new Notice("Wrong Password!");
+					}
+				}).open();
+			}
+		})
 
 		//Right Click Menu
 		this.registerEvent(
@@ -64,6 +91,17 @@ export default class PasswordPlugin extends Plugin {
 			})
 		)
 
+		//On active leaf change check if the file should be visible and close it if it shouldnt be
+		//I don't know how it affects performance
+		this.app.workspace.on("active-leaf-change", () => {
+			if (this.settings.hidden) this.closeOpenFiles();
+		})
+
+		//Try to close open hidden files before app is closing
+		this.app.workspace.on("quit", () => {
+			this.closeOpenFiles();
+		})
+
 		//Ribbon Button
 		this.ribbonButton = this.addRibbonIcon(this.settings.hidden ? "eye-off" : "eye", this.settings.hidden ? "Show Hidden Files" : "Hide Files", () => {
 
@@ -96,8 +134,6 @@ export default class PasswordPlugin extends Plugin {
 				this.changeFileVisibility(true);
 			}
 		});
-
-		
 
 		//When application opened
 		this.app.workspace.onLayoutReady(() => 
@@ -139,7 +175,7 @@ export default class PasswordPlugin extends Plugin {
 					const absFile = this.app.vault.getAbstractFileByPath(file);
 					if (absFile instanceof TFile) {
 						if (absFile.extension == "md") {
-							const newPath = file.slice(0,file.length - 3) + ".pp";
+							const newPath = file.slice(0,file.length - 3) + "." + this.EXT;
 							this.app.vault.rename(absFile, newPath);
 						}
 					}
@@ -156,11 +192,11 @@ export default class PasswordPlugin extends Plugin {
 			for (const path of this.settings.hiddenList) {
 				//Get the file with .pp extension
 				const file = this.app.vault.getAbstractFileByPath(path);
-				const ppPath = path.slice(0, path.length - 3) + ".pp";
+				const ppPath = path.slice(0, path.length - 3) + "." + this.EXT;
 				const ppFile = this.app.vault.getAbstractFileByPath(ppPath);
 				//If its a file replace the extension with .md
 				if (ppFile instanceof TFile) {
-					const newPath = ppFile.path.slice(0,ppFile.path.length - 3) + ".md";
+					const newPath = ppFile.path.slice(0, ppFile.path.length - this.EXT.length - 1) + ".md";
 					this.app.vault.rename(ppFile, newPath);
 				} 
 				else if (file instanceof TFolder) {
@@ -172,43 +208,10 @@ export default class PasswordPlugin extends Plugin {
 					}
 				}
 			}
-			//This method checks for every file in vault can be used for a debug command
-			// for (const file of this.app.vault.getFiles()) {
-			// 	if (file.extension == "pp") {
-			// 		const absFile = this.app.vault.getAbstractFileByPath(file.path);
-			// 		//Null Check
-			// 		if (absFile instanceof TFile) {
-			// 			const newPath = file.path.slice(0,file.path.length - 3) + ".md";
-			// 			this.app.vault.rename(absFile, newPath);
-			// 		}
-			// 	}
-			// }
 		}
 
 		//If a hidden file is open close it. 
-		const activeFile = this.app.workspace.getActiveFile();
-		//Is there an open file?
-		if (activeFile) {
-			//If there is an open file and its direktly in the hiddenList close it.
-			if (this.settings.hiddenList.includes(activeFile.path)) {
-				this.app.workspace.getLeaf().detach();
-			}
-			else {
-				//Iterate every folder in hiddenList
-				for (const path of this.settings.hiddenList) {
-					const folder = this.app.vault.getAbstractFileByPath(path);
-					if (folder instanceof TFolder) {
-						//Iterate every file in those folders
-						for (const file of folder.children) {
-							//If the activeFile matches close it
-							if(activeFile == file){
-								this.app.workspace.getLeaf().detach();
-							}
-						}
-					}
-				}
-			}
-		}
+		this.closeOpenFiles();
 
 		//Update ribbon button icon and text
 		if (hide) {
@@ -220,13 +223,59 @@ export default class PasswordPlugin extends Plugin {
 			setIcon(this.ribbonButton, "eye");
 		}
 	}
+	closeOpenFiles (folderPath?: string) {
+		const activeFile = this.app.workspace.getActiveFile();
+		//Is there an open file?
+		if (!activeFile) return;
+
+		if (folderPath) {
+			const folder = this.app.vault.getAbstractFileByPath(folderPath);
+			if (folder instanceof TFolder) {
+				for (const absFile of folder.children) {
+					if (absFile instanceof TFile) {
+						if(activeFile == absFile){
+							this.app.workspace.getLeaf().detach();
+						}
+					}
+					else if (absFile instanceof TFolder) {
+						this.closeOpenFiles(absFile.path);
+					}
+				}
+			}
+			return;
+		}
+
+		//If there is an open file and its direktly in the hiddenList close it.
+		if (this.settings.hiddenList.includes(activeFile.path)) {
+			this.app.workspace.getLeaf().detach();
+		}
+		else {
+			//Iterate every folder in hiddenList
+			for (const path of this.settings.hiddenList) {
+				const folder = this.app.vault.getAbstractFileByPath(path);
+				if (folder instanceof TFolder) {
+					//Iterate every file in those folders
+					for (const absFile of folder.children) {
+						//If the activeFile matches close it
+						if (absFile instanceof TFile) {
+							if(activeFile == absFile){
+								this.app.workspace.getLeaf().detach();
+							}
+						}
+						else if (absFile instanceof TFolder) {
+							this.closeOpenFiles(absFile.path);
+						}
+					}
+				}
+			}
+		}
+	}
 	changeIndVis (path: string, hide: boolean) {
-		console.log(hide ? "Hiding: " : "Unhiding: " + path);
 		if (hide) {
 			const absFile = this.app.vault.getAbstractFileByPath(path);
 			if (absFile instanceof TFile) {
 				if (absFile.extension == "md") {
-					const newPath = path.slice(0, path.length - 3) + ".pp";
+					const newPath = path.slice(0, path.length - 3) + "." + this.EXT;
 					this.app.vault.rename(absFile, newPath);
 				}
 			}
@@ -242,15 +291,15 @@ export default class PasswordPlugin extends Plugin {
 		else {
 			const absFile = this.app.vault.getAbstractFileByPath(path);
 			//If its a file
-			if (path.endsWith(".pp")) {
+			if (path.endsWith("." + this.EXT)) {
 				//Find the file with .pp extension
-				const ppPath = path.slice(0, path.length - 3) + ".pp";
+				const ppPath = path.slice(0, path.length - 3) + "." + this.EXT;
 				const file = this.app.vault.getAbstractFileByPath(ppPath);
 				//Confirm its a file and its not null
 				if (file instanceof TFile) {
-					if (file.extension == "pp") {
+					if (file.extension == this.EXT) {
 						//Replace the .pp extension with .md
-						const newPath = file.path.slice(0,file.path.length - 3) + ".md";
+						const newPath = file.path.slice(0,file.path.length - this.EXT.length - 1) + ".md";
 						this.app.vault.rename(file, newPath);
 					}
 				}
@@ -275,7 +324,7 @@ export default class PasswordPlugin extends Plugin {
 		if (this.settings.hidden) {
 			const absFile = this.app.vault.getAbstractFileByPath(path);
 			if (absFile instanceof TFile) {
-				const newPath = path.slice(0, path.length - 3) + ".pp";
+				const newPath = path.slice(0, path.length - 3) + "." + this.EXT;
 				this.app.vault.rename(absFile, newPath);
 			}
 			else if (absFile instanceof TFolder) {
@@ -292,13 +341,13 @@ export default class PasswordPlugin extends Plugin {
 			//If its a file
 			if (path.endsWith(".md")){
 				//Find the file with .pp extension
-				const ppPath = path.slice(0, path.length - 3) + ".pp";
+				const ppPath = path.slice(0, path.length - 3) + "." + this.EXT;
 				const file = this.app.vault.getAbstractFileByPath(ppPath);
 				//Confirm its a file and its not null
 				if (file instanceof TFile) {
-					if (file.extension == "pp") {
+					if (file.extension == this.EXT) {
 						//Replace the .pp extension with .md
-						const newPath = file.path.slice(0,file.path.length - 3) + ".md";
+						const newPath = file.path.slice(0, file.path.length - this.EXT.length - 1) + ".md";
 						this.app.vault.rename(file, newPath);
 					}
 				}
