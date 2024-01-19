@@ -6,7 +6,7 @@ on:
       - "*"
   workflow_dispatch:
     inputs:
-      tags:
+      tag:
         required: false
 
 jobs:
@@ -30,7 +30,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          tag="${GITHUB_REF#refs/tags/}"
+          # tag="${GITHUB_REF#refs/tags/}"
+          tag="$github.event.inputs.tag"
 
           gh release create "$tag" \
             --title="$tag" \
