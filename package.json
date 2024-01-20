@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-protector",
+	"name": "password-protect",
 	"version": "1.1.0",
-	"description": "An attempt to password protect your notes.",
+	"description": "Password protect your notes.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
