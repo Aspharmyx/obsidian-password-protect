@@ -20,24 +20,24 @@ export class ChangePasswordModal extends Modal {
     onOpen(): void {
         const { contentEl } = this;
 
-        contentEl.createEl("h1", {text: "Please Set A Password"})
+        contentEl.createEl("h1", {text: "Please set a password"})
 
         new Setting(contentEl)
-        .setName("Current Password")
+        .setName("Current password")
         .addText((text) => {
             text.inputEl.type = "password";
             text.onChange((value) => {this.currentPassword = value});
         });
 
         new Setting(contentEl)
-        .setName("New Password")
+        .setName("New password")
         .addText((text) => {
             text.inputEl.type = "password";
             text.onChange((value) => {this.newPassword = value});
         });
         
         new Setting(contentEl)
-        .setName("Confirm Password")
+        .setName("Confirm password")
         .addText((text) => {
             text.inputEl.type = "password";
             text.onChange((value) => {this.confPassword = value});
@@ -55,13 +55,13 @@ export class ChangePasswordModal extends Modal {
                     this.onSubmit(this.newPassword);
                 }
                 else if (this.currentPassword != this.plugin.settings.password) {
-                    const errorText = contentEl.createEl("h4", {text: "Current Password Is Wrong"});
+                    const errorText = contentEl.createEl("h4", {text: "Current password is wrong"});
                     setTimeout(() => {
                         errorText.remove();
                     }, 1500);
                 }
                 else if (this.newPassword != this.confPassword) {
-                    const errorText = contentEl.createEl("h4", {text: "Passwords Doesn't Match"});
+                    const errorText = contentEl.createEl("h4", {text: "Passwords doesn't match"});
                     setTimeout(() => {
                         errorText.remove();
                     }, 1500);

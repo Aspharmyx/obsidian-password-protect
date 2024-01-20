@@ -15,7 +15,7 @@ export class SetPasswordModal extends Modal {
     onOpen(): void {
         const { contentEl } = this;
 
-        contentEl.createEl("h1", {text: "Please Set A Password"})
+        contentEl.createEl("h1", {text: "Please set a password"})
 
         new Setting(contentEl)
         .setName("Password")
@@ -25,7 +25,7 @@ export class SetPasswordModal extends Modal {
         });
         
         new Setting(contentEl)
-        .setName("Confirm Password")
+        .setName("Confirm password")
         .addText((text) => {
             text.inputEl.type = "password";
             text.onChange((value) => {this.password = value});
@@ -43,7 +43,7 @@ export class SetPasswordModal extends Modal {
                     this.onSubmit(this.password);
                 }
                 else {
-                    const errorText = contentEl.createEl("h4", {text: "Passwords Doesn't Match"});
+                    const errorText = contentEl.createEl("h4", {text: "Passwords doesn't match"});
                     setTimeout(() => {
                         errorText.remove();
                     }, 1500);

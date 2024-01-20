@@ -13,7 +13,7 @@ export class ProtectedPathsModal extends Modal {
     onOpen(): void {
         const { contentEl } = this;
 
-        contentEl.createEl("h1", {text: "Please Enter Password"})
+        contentEl.createEl("h1", {text: "Please enter password"})
 
         new Setting(contentEl)
         .setName("Password")

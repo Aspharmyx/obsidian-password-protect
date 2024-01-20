@@ -11,7 +11,7 @@ export class HiddenPathsModal extends Modal {
 
 	onOpen() {
 		const {contentEl: content} = this;
-		content.createEl(`h1`, { text: `Hidden Files and Folders` });
+		content.createEl(`h1`, { text: `Hidden files and folders` });
 		content.createEl(`hr`);
 		const body = content.createEl(`div`, { cls: `hidden-list-modal-body` });
 		this.plugin.settings.hiddenList.forEach(path => {

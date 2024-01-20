@@ -24,12 +24,12 @@ export default class PasswordPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
-		console.log("Password Protect Plugin Launched!");
+		// console.log("Password Protect Plugin Launched!");
 
 		//Command for debugging
 		this.addCommand({
 			id: "all-hidden-files-to-md",
-			name: "Turn All Hidden Files To Markdown",
+			name: "Turn all hidden files to Markdown",
 			callback: () => {
 				new ProtectedPathsModal(this.app, (result) => {
 					if (result == this.settings.password) {
@@ -44,9 +44,9 @@ export default class PasswordPlugin extends Plugin {
 								}
 							}
 						}
-						new Notice("Password Correct!");
+						new Notice("Password correct!");
 					} else {
-						new Notice("Wrong Password!");
+						new Notice("Wrong password!");
 					}
 				}).open();
 			}
@@ -58,13 +58,13 @@ export default class PasswordPlugin extends Plugin {
 				if (file instanceof TFolder) {
 					menu.addItem((i) => {
 						if (this.settings.hiddenList.includes(file.path)) {
-							i.setTitle(`Unhide Folder`)
+							i.setTitle(`Unhide folder`)
 							.setIcon(`eye`)
 							.onClick(() => {
 								this.changeIndVisAndSave(file.path, false);
 							})
 						} else {
-							i.setTitle(`Hide Folder`)
+							i.setTitle(`Hide folder`)
 							.setIcon(`eye-off`)
 							.onClick(() => {
 								this.changeIndVisAndSave(file.path, true);
@@ -74,13 +74,13 @@ export default class PasswordPlugin extends Plugin {
 				} else {
 					menu.addItem((i) => {
 						if (this.settings.hiddenList.includes(file.path)) {
-							i.setTitle(`Unhide File`)
+							i.setTitle(`Unhide file`)
 							.setIcon(`eye`)
 							.onClick((e) => {
 								this.changeIndVisAndSave(file.path, false);
 							})
 						} else {
-							i.setTitle(`Hide File`)
+							i.setTitle(`Hide file`)
 							.setIcon(`eye-off`)
 							.onClick((e) => {
 								this.changeIndVisAndSave(file.path, true);
@@ -103,17 +103,17 @@ export default class PasswordPlugin extends Plugin {
 		})
 
 		//Ribbon Button
-		this.ribbonButton = this.addRibbonIcon(this.settings.hidden ? "eye-off" : "eye", this.settings.hidden ? "Show Hidden Files" : "Hide Files", () => {
+		this.ribbonButton = this.addRibbonIcon(this.settings.hidden ? "eye-off" : "eye", this.settings.hidden ? "Show hidden files" : "Hide files", () => {
 
 			if (this.settings.hiddenList.length == 0) {
-				new Notice("There Are No Hidden Files.")
+				new Notice("There are no hidden files.")
 				return;
 			}
 
 			if (this.settings.hidden) {
 				//If password not set show set password modal
 				if (!this.settings.password) {
-					new Notice("Please Set A Password!");
+					new Notice("Please set a password!");
 					new SetPasswordModal(this.app, (pass) => {
 						this.settings.password = pass;
 						this.saveSettings();
@@ -123,9 +123,9 @@ export default class PasswordPlugin extends Plugin {
 					new ProtectedPathsModal(this.app, (result) => {
 						if (result == this.settings.password) {
 							this.changeFileVisibility(false);
-							new Notice("Password Correct!");
+							new Notice("Password correct!");
 						} else {
-							new Notice("Wrong Password!");
+							new Notice("Wrong password!");
 						}
 					}).open();
 				}
@@ -215,11 +215,11 @@ export default class PasswordPlugin extends Plugin {
 
 		//Update ribbon button icon and text
 		if (hide) {
-			this.ribbonButton.ariaLabel = "Show Hidden Files";
+			this.ribbonButton.ariaLabel = "Show hidden files";
 			setIcon(this.ribbonButton, "eye-off");
 		}
 		else {
-			this.ribbonButton.ariaLabel = "Hide Files";
+			this.ribbonButton.ariaLabel = "Hide files";
 			setIcon(this.ribbonButton, "eye");
 		}
 	}

@@ -7,16 +7,17 @@ export class ChangePasswordSetting {
 
     public static create(plugin: PasswordPlugin, container: HTMLElement) {
         return new Setting(container)
-        .setName("Change Password")
+        .setName("Change password")
+		.setDesc(`Change the password by entering current password.`)
         .addButton(btn => {
-            btn.setButtonText("Change Password")
+            btn.setButtonText("Change password")
             .onClick(event => {
                 if (!event.isTrusted) { return }
 
                 new ChangePasswordModal(plugin, (pass) => {
                     plugin.settings.password = pass;
                     plugin.saveSettings();
-                    new Notice("Changed Password!");
+                    new Notice("Changed password!");
                 }).open();
             })
         })

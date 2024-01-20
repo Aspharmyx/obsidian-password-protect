@@ -9,9 +9,10 @@ export class ShowHiddenFilesSetting {
 
     public static create(plugin: PasswordPlugin, container: HTMLElement) {
         return new Setting(container)
-        .setName("Show/Hide Files")
+        .setName("Show/hide files")
+		.setDesc(`Toggle showing and hiding of files or folders.`)
         .addButton(btn => {
-            btn.setButtonText("Show/Hide Files")
+            btn.setButtonText("Show/hide files")
             .onClick(event => {
                 if (!event.isTrusted) { return }
 
@@ -21,7 +22,7 @@ export class ShowHiddenFilesSetting {
                             plugin.settings.password = pass;
                             plugin.saveSettings();
                         }).open();
-                        new Notice("Please Set A Password!");
+                        new Notice("Please set a password!");
                     }
                     else {
                         new ProtectedPathsModal(plugin.app, (result) => {
@@ -30,9 +31,9 @@ export class ShowHiddenFilesSetting {
                                     changePathVisibility(path, false);
                                     plugin.settings.hidden = false;
                                 }
-                                new Notice("Password Correct!");
+                                new Notice("Password correct!");
                             } else {
-                                new Notice("Wrong Password!");
+                                new Notice("Wrong password!");
                             }
                         }).open();
                     }

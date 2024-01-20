@@ -1,11 +1,11 @@
 {
 	"id": "password-protect",
 	"name": "Password Protect",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"minAppVersion": "0.15.0",
 	"description": "Password protect your notes.",
 	"author": "Aspharmyx",
-	"authorUrl": "",
-	"fundingUrl": "",
+	"authorUrl": "https://ko-fi.com/aspharmyx",
+	"fundingUrl": "https://ko-fi.com/aspharmyx",
 	"isDesktopOnly": false
 }

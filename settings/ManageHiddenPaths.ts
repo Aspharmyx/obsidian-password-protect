@@ -9,8 +9,8 @@ export class ManageHiddenPaths {
 
 	public static create(plugin: PasswordPlugin, container: HTMLElement) {
 		return new Setting(container)
-		.setName(`Hidden Files and Folders`)
-		.setDesc(`Add or remove files and folders from the list that are being hidden`)
+		.setName(`Hidden files and folders`)
+		.setDesc(`Add or remove files and folders from the list that are being hidden.`)
 		.addButton(b => {
 			b.setButtonText(`Manage`)
 			.onClick(event => {
@@ -18,7 +18,7 @@ export class ManageHiddenPaths {
 				if (!event.isTrusted) { return }
 
 				if (!plugin.settings.password) {
-					new Notice("Please Set A Password!");
+					new Notice("Please set a password!");
 					new SetPasswordModal(plugin.app, (pass) => {
 						plugin.settings.password = pass;
 						plugin.saveSettings();
@@ -30,7 +30,7 @@ export class ManageHiddenPaths {
 							new HiddenPathsModal(plugin).open();
 						}
 						else {
-							new Notice("Wrong Password!");
+							new Notice("Wrong password!");
 						}
 					}).open();
 				}
