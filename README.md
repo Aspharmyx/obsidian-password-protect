@@ -15,7 +15,7 @@ This is how the ignore pattern looks like for my Journal folder:
 
 **/Journal/*.md**
 
-I'm not sure how it works with obsidian sync. I can release a version where it hides files without changing extensions but that way the files are visible with search and in graph view.
+I'm not sure how it works with Obsidian sync. I can release a version where it hides files without changing extensions but that way the files are visible with search and in graph view.
 
 ### Thanks To
 Oliver for [File Hider](https://github.com/Oliver-Akins/file-hider) plugin. This plugin uses some code from it like for hiding folders and context menu.
