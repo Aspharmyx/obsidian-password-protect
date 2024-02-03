@@ -1,7 +1,6 @@
 import { App, Notice, Plugin, PluginSettingTab, TFile, TFolder, setIcon } from 'obsidian';
 import { ProtectedPathsModal } from './modal/ProtectedPathsModal';
 import { SetPasswordModal } from "./modal/SetPasswordModal";
-// import { changePathVisibility } from "utils";
 import { ManageHiddenPaths } from "settings/ManageHiddenPaths";
 import { ChangePasswordSetting } from "settings/ChangePasswordSetting";
 import { ShowHiddenFilesSetting } from "settings/ShowHiddenFilesSetting";
@@ -99,7 +98,7 @@ export default class PasswordPlugin extends Plugin {
 
 		//Try to close open hidden files before app is closing
 		this.app.workspace.on("quit", () => {
-			this.closeOpenFiles();
+			this.changeFileVisibility(true);
 		})
 
 		//Ribbon Button
