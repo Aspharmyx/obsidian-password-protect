@@ -5,7 +5,7 @@
 	"minAppVersion": "0.15.0",
 	"description": "Password protect your notes.",
 	"author": "Aspharmyx",
-	"authorUrl": "https://www.buymeacoffee.com/aspharmyx",
-	"fundingUrl": "https://www.buymeacoffee.com/aspharmyx",
+	"authorUrl": "https://github.com/Aspharmyx/obsidian-password-protect",
+	"fundingUrl": "https://github.com/Aspharmyx/obsidian-password-protect",
 	"isDesktopOnly": false
 }

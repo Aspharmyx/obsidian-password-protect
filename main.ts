@@ -92,14 +92,10 @@ export default class PasswordPlugin extends Plugin {
 
 		//On active leaf change check if the file should be visible and close it if it shouldnt be
 		//I don't know how it affects performance
+		this.registerEvent(
 		this.app.workspace.on("active-leaf-change", () => {
 			if (this.settings.hidden) this.closeOpenFiles();
-		})
-
-		//Try to close open hidden files before app is closing
-		this.app.workspace.on("quit", () => {
-			this.changeFileVisibility(true);
-		})
+		}));
 
 		//Ribbon Button
 		this.ribbonButton = this.addRibbonIcon(this.settings.hidden ? "eye-off" : "eye", this.settings.hidden ? "Show hidden files" : "Hide files", () => {
