@@ -8,6 +8,10 @@ This plugin changes the extension of files to hide them from even searches and g
 
 I'll try to encrypt the files and see if it works consistently.
 
+### Problem Solving
+
+If you encounter a problem and want to change back file extensions to .md you can use the command "Password Protect: Turn all hidden files to Markdown". This command of course needs password.
+
 ### Syncing Files
 A workaround I use is I ignore the .md files in my hidden folders. I use syncthing to sync my desktop and mobile and it works as long as you don't try to edit hidden files at the same time.
 
