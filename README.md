@@ -23,7 +23,3 @@ I'm not sure how it works with Obsidian sync. I can release a version where it h
 
 ### Thanks To
 Oliver for [File Hider](https://github.com/Oliver-Akins/file-hider) plugin. This plugin uses some code from it like for hiding folders and context menu.
-
-### Support
-
-<a href="https://www.buymeacoffee.com/aspharmyx" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
