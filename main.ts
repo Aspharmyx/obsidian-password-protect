@@ -1,4 +1,4 @@
-import { App, FileView, Notice, Plugin, PluginSettingTab, TFile, TFolder, setIcon } from 'obsidian';
+import { App, Notice, Plugin, PluginSettingTab, TFile, TFolder, setIcon } from 'obsidian';
 import { ProtectedPathsModal } from './modal/ProtectedPathsModal';
 import { SetPasswordModal } from "./modal/SetPasswordModal";
 import { ManageHiddenPaths } from "settings/ManageHiddenPaths";
@@ -23,7 +23,7 @@ export default class PasswordPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
-		// console.log("Password Protect Plugin Launched!");
+		console.log("Password Protect Plugin Launched!");
 
 		//Command for debugging
 		this.addCommand({
@@ -93,8 +93,8 @@ export default class PasswordPlugin extends Plugin {
 		//On active leaf change check if the file should be visible and close it if it shouldnt be
 		//I don't know how it affects performance
 		this.registerEvent(
-		this.app.workspace.on("active-leaf-change", () => {
-			if (this.settings.hidden) this.closeOpenFiles();
+			this.app.workspace.on("active-leaf-change", () => {
+				if (this.settings.hidden) this.closeOpenFiles();
 		}));
 
 		//Ribbon Button
@@ -130,18 +130,39 @@ export default class PasswordPlugin extends Plugin {
 			}
 		});
 
+
+
 		//When application opened
 		this.app.workspace.onLayoutReady(() => 
 		{
 			//Sets an event for when the file explorer changes/renders then hides files and then destroys the event
 			setTimeout(() => {
-				const view = this.app.workspace.getLeavesOfType("file-explorer")[0].view as FileView;
+				const view = this.app.workspace.getLeavesOfType("file-explorer")[0].view;
+
 				const observer = new MutationObserver(() => {
-					this.changeFileVisibility(true);
+					if (this.settings.hidden == false)
+						this.changeFileVisibility(true);
 					observer.disconnect();
 				});
-				if (view instanceof FileView) {
-					observer.observe(view.containerEl, {attributes: true, subtree: true, characterData: true})
+
+				const collapseObserver = new MutationObserver((mutations) => {
+					for (const mutation of mutations) {
+						if (mutation.type === "attributes" && mutation.attributeName === "class") {
+							const target = mutation.target as HTMLElement;
+							if (target && target.classList.contains('nav-folder') && !target.classList.contains("is-collapsed")) {
+								const child = target.firstChild as HTMLElement;
+								const folderPath = child?.attributes.getNamedItem("data-path")?.value;
+								if (!folderPath) return;
+								setTimeout(() => {this.checkFolderForVisibility(folderPath);}, 10);
+							}
+						}
+					}
+				});
+
+
+				if (view) {
+					observer.observe(view.containerEl, {attributes: true, subtree: true, characterData: true});
+					collapseObserver.observe(view.containerEl, {attributes: true, subtree: true, attributeFilter: ["class"]});
 				}
 
 				this.changeFileVisibility(true);
@@ -352,6 +373,26 @@ export default class PasswordPlugin extends Plugin {
 				changePathVisibility(path, hide);
 				for (const childFile of absFile.children) {
 					this.changeIndVis(childFile.path, hide);
+				}
+			}
+		}
+	}
+	checkFolderForVisibility (path: string) {
+		if (!this.settings.hidden) return;
+		
+		const absFile = this.app.vault.getAbstractFileByPath(path);
+
+		if (absFile instanceof TFolder) {
+			for (const file of absFile.children) {
+				if (file instanceof TFolder) {
+					if (!this.settings.hiddenList.includes(file.path)) return;
+					
+					changePathVisibility(file.path, true);
+					console.log("Making - " + file.path + " - hidden!");
+					for (const childFile of file.children) {
+						this.changeIndVis(childFile.path, true);
+						console.log(childFile.name + " is hidden!");
+					}
 				}
 			}
 		}
