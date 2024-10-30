@@ -1,4 +1,4 @@
-import { App, Notice, Plugin, PluginSettingTab, TFile, TFolder, setIcon } from 'obsidian';
+import { App, FileView, Notice, Plugin, PluginSettingTab, TFile, TFolder, setIcon } from 'obsidian';
 import { ProtectedPathsModal } from './modal/ProtectedPathsModal';
 import { SetPasswordModal } from "./modal/SetPasswordModal";
 import { ManageHiddenPaths } from "settings/ManageHiddenPaths";
@@ -133,17 +133,19 @@ export default class PasswordPlugin extends Plugin {
 		//When application opened
 		this.app.workspace.onLayoutReady(() => 
 		{
-			//Sets an event for when the file explorer changes/renders and makes files hidden then destroys the event
+			//Sets an event for when the file explorer changes/renders then hides files and then destroys the event
 			setTimeout(() => {
-				const leaf = this.app.workspace.getLeavesOfType("file-explorer")[0];
+				const view = this.app.workspace.getLeavesOfType("file-explorer")[0].view as FileView;
 				const observer = new MutationObserver(() => {
 					this.changeFileVisibility(true);
 					observer.disconnect();
 				});
-				observer.observe(leaf.view.containerEl, {attributes: true, subtree: true, characterData: true})
+				if (view instanceof FileView) {
+					observer.observe(view.containerEl, {attributes: true, subtree: true, characterData: true})
+				}
 
 				this.changeFileVisibility(true);
-			}, 2)
+			}, 50)
 		})
 
 
@@ -240,7 +242,7 @@ export default class PasswordPlugin extends Plugin {
 			return;
 		}
 
-		//If there is an open file and its direktly in the hiddenList close it.
+		//If there is an open file and its directly in the hiddenList close it.
 		if (this.settings.hiddenList.includes(activeFile.path)) {
 			this.app.workspace.getLeaf().detach();
 		}
